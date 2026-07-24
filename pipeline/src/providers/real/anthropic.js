@@ -18,7 +18,28 @@ Rules: total spoken text must fit the target runtime (~14 chars/second of speech
 2-4 scenes. Every scene ends on a button (a punchline beat). delivery_tags is a
 short bracketed emotional direction like "[dry]" or "[tense]".`;
 
-export async function generateScript({ show, idea }) {
+export async function generateScript({ show, idea, revision }) {
+  const target = show.format.target_runtime_s;
+  const budget = Math.round(target * 14 * 0.75); // chars of dialogue that fit
+  const messages = [
+    {
+      role: "user",
+      content:
+        `${writingContext(show)}\n\nEPISODE IDEA: ${idea}\n\n` +
+        `HARD CONSTRAINTS:\n` +
+        `- character_id values must be exactly one of: ${show.characters.map((c) => c.id).join(", ")}\n` +
+        `- location_id values must be exactly one of: ${show.locations.map((l) => l.id).join(", ")}\n` +
+        `- This is a ${target}-SECOND episode. Maximum ${budget} total dialogue characters (~10-14 short lines). Count carefully.\n\n` +
+        `Write the episode script as JSON.`,
+    },
+  ];
+  if (revision) {
+    messages.push({ role: "assistant", content: JSON.stringify(revision.script) });
+    messages.push({
+      role: "user",
+      content: `Script Doctor rejected this draft. Fix ALL of the following and return the corrected full JSON:\n- ${revision.notes.join("\n- ")}`,
+    });
+  }
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -31,13 +52,9 @@ export async function generateScript({ show, idea }) {
       max_tokens: 4000,
       system:
         "You are the Screenwriter agent for an AI sitcom studio. Write tight, funny, structured scripts. " +
+        "Brevity is the soul of the joke: short lines land harder. " +
         SCRIPT_SCHEMA_HINT,
-      messages: [
-        {
-          role: "user",
-          content: `${writingContext(show)}\n\nEPISODE IDEA: ${idea}\n\nWrite the episode script as JSON.`,
-        },
-      ],
+      messages,
     }),
   });
   if (!res.ok) throw new Error(`Anthropic API ${res.status}: ${await res.text()}`);

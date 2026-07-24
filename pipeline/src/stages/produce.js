@@ -41,11 +41,23 @@ export async function produceEpisode({ show, idea, outRoot, forceMock = false })
   };
 
   // Stage 1 — script (human gate in the product; auto-approved in the spike)
+  const { normalizeScript, validateScript, estimateRuntimeS } = await import("./script-doctor.js");
   log("script", `writing script for idea: "${idea}"`);
-  const script = await p.llm.generateScript({ show, idea });
+  let script = normalizeScript(await p.llm.generateScript({ show, idea }), show);
+  let check = validateScript(script, show, show.format.target_runtime_s);
+  if (check.errors.length) {
+    log("doctor", `draft rejected (${check.errors.length} issue${check.errors.length > 1 ? "s" : ""}) — requesting revision`);
+    for (const e of check.errors) log("doctor", `  - ${e.slice(0, 110)}`);
+    script = normalizeScript(
+      await p.llm.generateScript({ show, idea, revision: { script, notes: check.errors } }),
+      show
+    );
+    check = validateScript(script, show, show.format.target_runtime_s);
+    if (check.errors.length) throw new Error(`Script Doctor: revision still invalid:\n- ${check.errors.join("\n- ")}`);
+  }
   await writeFile(path.join(epDir, "script.json"), JSON.stringify(script, null, 2));
   const lineCount = script.scenes.reduce((n, s) => n + s.lines.length, 0);
-  log("script", `"${script.title}" — ${script.scenes.length} scenes, ${lineCount} lines`);
+  log("script", `"${script.title}" — ${script.scenes.length} scenes, ${lineCount} lines, est ~${check.estimated_runtime_s}s`);
 
   // Stage 2 — shot list + pre-flight quote (soft gate in the product)
   const shots = scriptToShotlist(script, show);

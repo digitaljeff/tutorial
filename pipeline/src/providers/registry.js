@@ -47,5 +47,22 @@ async function pickAsync(name, keyEnv, realLoader, mockModule, forceMock) {
     log("gateway", `${name}: ${useReal ? `REAL (${keyEnv} set)` : "mock"}`);
     logged.add(name);
   }
-  return useReal ? realLoader() : mockModule;
+  if (!useReal) return mockModule;
+  // Fallback ladder (docs/plan/02): a failing real provider degrades that
+  // call to the mock with a warning instead of killing the episode.
+  const real = await realLoader();
+  return new Proxy(real, {
+    get(target, prop) {
+      const fn = target[prop];
+      if (typeof fn !== "function" || !(prop in mockModule)) return fn;
+      return async (...args) => {
+        try {
+          return await fn(...args);
+        } catch (e) {
+          log("gateway", `WARN ${name}.${String(prop)} real provider failed (${String(e.message).slice(0, 90)}) -> mock fallback`);
+          return mockModule[prop](...args);
+        }
+      };
+    },
+  });
 }
