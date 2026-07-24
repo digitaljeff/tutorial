@@ -20,6 +20,7 @@ export function characterSheets(bible, characterIds) {
 }
 
 export async function produceEpisode({ show, idea, outRoot, forceMock = false, lipsync = true }) {
+  const t0 = Date.now();
   const p = getProviders({ forceMock });
 
   // Stage 0 — ensure the show bible exists (sheets, voices, jingle).
@@ -83,7 +84,8 @@ export async function produceEpisode({ show, idea, outRoot, forceMock = false, l
   const { total_s } = applyAudioTiming(shots, lineDurations);
   for (const shot of shots) for (const lt of shot.line_times) lt.audioFile = lt.line._audioFile;
   log("tts", `${lineDurations.size} lines voiced; episode body ${total_s}s`);
-  printQuote(`Episode quote: "${script.title}"`, quoteEpisode({ shots, script }), {
+  const quote = quoteEpisode({ shots, script });
+  printQuote(`Episode quote: "${script.title}"`, quote, {
     mock: forceMock || !process.env.FAL_KEY,
   });
 
@@ -141,6 +143,9 @@ export async function produceEpisode({ show, idea, outRoot, forceMock = false, l
     script,
     music_file: musicFile,
     jingle_file: bible.jingle,
+    quote,
+    produced_at: new Date().toISOString(),
+    wall_clock_s: Math.round((Date.now() - t0) / 1000),
     retakes: [],
     shots: shots.map((s) => ({
       idx: s.idx,
@@ -153,6 +158,7 @@ export async function produceEpisode({ show, idea, outRoot, forceMock = false, l
       start_s: s.start_s,
       keyframeFile: s.keyframeFile,
       clipFile: s.clipFile,
+      qc: s.qc ?? null,
       line_times: (s.line_times ?? []).map((lt) => ({
         start_s: lt.start_s,
         duration_s: lt.duration_s,

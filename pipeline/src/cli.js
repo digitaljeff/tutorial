@@ -126,6 +126,38 @@ if (cmd === "bible") {
   process.exit(0);
 }
 
+if (cmd === "report") {
+  // Phase 0 metrics: aggregate every episode manifest in out/.
+  const { readdirSync, readFileSync, existsSync } = await import("node:fs");
+  const outDir = opt("out", path.join(root, "out"));
+  const eps = readdirSync(outDir)
+    .filter((d) => d.startsWith("ep-"))
+    .map((d) => path.join(outDir, d, "episode.json"))
+    .filter(existsSync)
+    .map((f) => ({ dir: path.dirname(f), m: JSON.parse(readFileSync(f, "utf8")) }))
+    .sort((a, b) => a.dir.localeCompare(b.dir));
+  if (!eps.length) { console.log("no episodes with manifests in", outDir); process.exit(0); }
+  let totCost = 0, totShots = 0, totQcFail = 0, totRetakes = 0;
+  console.log("episode".padEnd(44), "shots", "qc-fail", "retakes", "est$".padStart(6), "wall".padStart(6));
+  for (const { dir, m } of eps) {
+    const shots = m.shots.length;
+    const qcFail = m.shots.filter((s) => s.qc && s.qc.pass === false).length;
+    const cost = m.quote?.total_usd ?? NaN;
+    totCost += cost || 0; totShots += shots; totQcFail += qcFail; totRetakes += m.retakes.length;
+    console.log(
+      (m.script.title ?? path.basename(dir)).slice(0, 42).padEnd(44),
+      String(shots).padEnd(5),
+      String(qcFail).padEnd(7),
+      String(m.retakes.length).padEnd(7),
+      (isNaN(cost) ? "n/a" : cost.toFixed(2)).padStart(6),
+      (m.wall_clock_s ? Math.round(m.wall_clock_s / 60) + "m" : "n/a").padStart(6)
+    );
+  }
+  console.log("-".repeat(80));
+  console.log(`${eps.length} episodes | ${totShots} shots | ${totQcFail} QC flags | ${totRetakes} retakes | est $${totCost.toFixed(2)}`);
+  process.exit(0);
+}
+
 if (cmd === "season") {
   const { getProviders } = await import("./providers/registry.js");
   const { writeFile, mkdir } = await import("node:fs/promises");
