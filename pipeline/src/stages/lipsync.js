@@ -4,7 +4,7 @@
 // character per shot, which is what makes this reliable.
 
 import path from "node:path";
-import { ffmpeg, log } from "../util.js";
+import { ffmpeg, log, normalizeClipDuration } from "../util.js";
 
 export const LINE_LEAD_S = 0.3; // dialogue starts this far into its shot (must match shotlist.js)
 
@@ -30,6 +30,9 @@ export async function lipSyncShots({ shots, providers, workDir, enabled = true }
       const padded = path.join(workDir, `ls_pad_${shot.idx}.wav`);
       await padLineAudio({ audioFile: lt.audioFile ?? lt.line._audioFile, durationS: shot.duration_s, outFile: padded });
       await providers.lipsync.applyLipSync({ clipFile: shot.clipFile, audioFile: padded, outFile: shot.clipFile });
+      // Kling can return a slightly different duration/fps — re-pin the
+      // timeline after the sync pass too.
+      await normalizeClipDuration(shot.clipFile, shot.duration_s);
       log("lipsync", `shot ${shot.idx} synced (${++done}/${dialogueShots.length})`);
     })
   );

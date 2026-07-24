@@ -27,10 +27,13 @@ export async function generateLineAudio({ line, character, outFile }) {
 // then save the first preview as a permanent voice. Endpoint shapes per
 // ElevenLabs text-to-voice docs — verify against live docs on first run.
 export async function designVoice({ character }) {
+  // voice_hint carries the non-negotiables (gender, age, register, pace) —
+  // without them Voice Design guesses, and two leads can land on nearly the
+  // same voice.
   const desc =
-    `${character.name}: ${character.personality.traits.join(", ")}. ` +
-    `Voice for an animated sitcom character. ${character.speech.delivery_tags_default} energy. ` +
-    `${character.role === "foil" ? "Low, unhurried, deadpan." : "Quick, bright, wound tight."}`;
+    `${character.speech.voice_hint} ` +
+    `Character: ${character.name}, ${character.personality.traits.join(", ")}. ` +
+    `Animated sitcom character voice, ${character.speech.delivery_tags_default} default energy.`;
   const preview = await fetch("https://api.elevenlabs.io/v1/text-to-voice/design", {
     method: "POST",
     headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY, "Content-Type": "application/json" },

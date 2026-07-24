@@ -24,7 +24,8 @@ export function scriptToShotlist(script, show) {
         scene: sceneIdx,
         location_id: scene.location_id,
         character_ids: [line.character_id],
-        framing: "medium single, sitcom coverage, character facing slightly off-camera",
+        framing:
+          "medium single, SOLO shot — exactly ONE person in frame, no other people visible, sitcom coverage, character facing slightly off-camera",
         // Never quote the dialogue text here — image models render quoted
         // strings as literal text panels in the frame.
         action: `${show.characters.find((c) => c.id === line.character_id).name} is mid-conversation, ${line.delivery_tags?.replace(/[\[\]]/g, "") || "speaking"} expression, natural hand gesture`,

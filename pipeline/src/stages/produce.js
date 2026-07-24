@@ -9,7 +9,7 @@ import { scriptToShotlist, applyAudioTiming } from "./shotlist.js";
 import { assemble } from "./assemble.js";
 import { buildBible, loadBibleState } from "./bible.js";
 import { quoteEpisode, printQuote } from "../cost.js";
-import { ensureDir, log } from "../util.js";
+import { ensureDir, log, normalizeClipDuration, pLimit } from "../util.js";
 
 export function characterSheets(bible, characterIds) {
   if (!bible) return [];
@@ -63,17 +63,21 @@ export async function produceEpisode({ show, idea, outRoot, forceMock = false, l
   const shots = scriptToShotlist(script, show);
   log("shotlist", `${shots.length} shots (coverage grammar: establishing + singles)`);
 
-  // Stage 3a — dialogue audio FIRST (audio-driven timing)
+  // Stage 3a — dialogue audio FIRST (audio-driven timing).
+  // Concurrency-capped: ElevenLabs allows 4-10 concurrent requests by tier.
+  const ttsLimit = pLimit(4);
   const lineDurations = new Map();
   await Promise.all(
     shots.flatMap((shot) =>
-      shot.lines.map(async (line, li) => {
-        const character = show.characters.find((c) => c.id === line.character_id);
-        const outFile = path.join(dirs.audio, `s${shot.idx}_l${li}.wav`);
-        const { durationS } = await p.tts.generateLineAudio({ line, character, outFile });
-        lineDurations.set(line, durationS);
-        line._audioFile = outFile;
-      })
+      shot.lines.map((line, li) =>
+        ttsLimit(async () => {
+          const character = show.characters.find((c) => c.id === line.character_id);
+          const outFile = path.join(dirs.audio, `s${shot.idx}_l${li}.wav`);
+          const { durationS } = await p.tts.generateLineAudio({ line, character, outFile });
+          lineDurations.set(line, durationS);
+          line._audioFile = outFile;
+        })
+      )
     )
   );
   const { total_s } = applyAudioTiming(shots, lineDurations);
@@ -97,10 +101,14 @@ export async function produceEpisode({ show, idea, outRoot, forceMock = false, l
       shot.keyframeFile = kf;
       const clip = path.join(dirs.clips, `shot${String(shot.idx).padStart(2, "0")}.mp4`);
       await p.video.generateClip({ keyframe: kf, shot, show, durationS: shot.duration_s, outFile: clip });
+      // TIMELINE INTEGRITY: providers return clips longer/shorter than planned
+      // (Seedance min 4s); force every clip to its exact planned duration or
+      // the audio overlay drifts out of sync shot by shot.
+      await normalizeClipDuration(clip, shot.duration_s);
       shot.clipFile = clip;
     })
   );
-  log("video", `${shots.length} keyframes + clips generated`);
+  log("video", `${shots.length} keyframes + clips generated (duration-normalized)`);
 
   // Stage 3c — lip sync every dialogue shot to its line audio
   const { lipSyncShots } = await import("./lipsync.js");

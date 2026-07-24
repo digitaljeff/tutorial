@@ -17,7 +17,8 @@ export const demoShow = {
   style_guide: {
     visual:
       "3D animated sitcom, warm Pixar-adjacent look, soft key lighting, shallow depth of field, muted teal and amber palette, clean rounded character design",
-    visual_negative: "photorealistic, live action, horror, gritty, text overlays, watermark",
+    visual_negative:
+      "photorealistic, live action, horror, gritty, text overlays, watermark, extra people, duplicate person, crowd",
     writing:
       "Fast two-hander banter. Setup/punchline rhythm, rule-of-three escalations, no meanness without warmth underneath. PG. Every scene ends on a button.",
   },
@@ -41,7 +42,9 @@ export const demoShow = {
       },
       speech: {
         voice_provider: "elevenlabs",
-        voice_id: null, // set after Voice Design tomorrow
+        voice_id: null, // minted by Voice Design (bible stage)
+        voice_hint:
+          "Female voice, late 30s, warm quick alto. Fast talker, precise consonants, tightly wound energy, slightly nasal when stressed. American accent.",
         mock_pitch_hz: 300,
         verbal_tics: ["talks in numbered lists when stressed"],
         delivery_tags_default: "[tense]",
@@ -63,6 +66,8 @@ export const demoShow = {
       speech: {
         voice_provider: "elevenlabs",
         voice_id: null,
+        voice_hint:
+          "Male voice, mid 20s, low relaxed baritone. Slow unhurried delivery, flat deadpan intonation, quiet warmth underneath. American accent.",
         mock_pitch_hz: 170,
         verbal_tics: ["never uses more words than necessary"],
         delivery_tags_default: "[calm]",
