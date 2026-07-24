@@ -42,9 +42,65 @@ if (cmd === "doctor") {
   } catch {
     console.log("ffmpeg: MISSING — install it (apt-get install ffmpeg / brew install ffmpeg)");
   }
-  for (const k of ["ANTHROPIC_API_KEY", "FAL_KEY", "ELEVENLABS_API_KEY"]) {
-    console.log(`${k}: ${process.env[k] ? "set (real provider active)" : "not set (mock provider)"}`);
-  }
+
+  // Live connectivity checks: distinguishes egress-blocked / bad key /
+  // no credits / OK, so provider issues are always one command to diagnose.
+  const probe = async (name, fn) => {
+    try {
+      console.log(`${name}: ${await fn()}`);
+    } catch (e) {
+      const m = String(e.message ?? e);
+      console.log(`${name}: NETWORK ERROR — ${m.slice(0, 120)}`);
+    }
+  };
+
+  await probe("anthropic", async () => {
+    if (!process.env.ANTHROPIC_API_KEY) return "no key (mock Screenwriter)";
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": process.env.ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 1,
+        messages: [{ role: "user", content: "ok" }],
+      }),
+    });
+    const body = await r.text();
+    if (r.status === 200) return "OK — real Screenwriter active";
+    if (r.status === 401) return "BAD KEY (401)";
+    if (body.includes("credit balance")) return "KEY OK but NO API CREDITS — add credits at console.anthropic.com/settings/billing";
+    if (body.includes("allowlist")) return "EGRESS BLOCKED — allow api.anthropic.com in the environment network settings";
+    return `unexpected ${r.status}: ${body.slice(0, 100)}`;
+  });
+
+  await probe("elevenlabs", async () => {
+    if (!process.env.ELEVENLABS_API_KEY) return "no key (mock voices)";
+    const r = await fetch("https://api.elevenlabs.io/v1/user/subscription", {
+      headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY },
+    });
+    const body = await r.text();
+    if (body.includes("allowlist")) return "EGRESS BLOCKED — allow api.elevenlabs.io in the environment network settings";
+    if (r.status === 401) return "BAD KEY (401)";
+    if (r.status !== 200) return `unexpected ${r.status}: ${body.slice(0, 100)}`;
+    const s = JSON.parse(body);
+    return `OK — tier ${s.tier}, ${s.character_count}/${s.character_limit} chars used`;
+  });
+
+  await probe("fal", async () => {
+    const r = await fetch("https://queue.fal.run/fal-ai/any", {
+      method: "POST",
+      headers: process.env.FAL_KEY ? { Authorization: `Key ${process.env.FAL_KEY}` } : {},
+    });
+    const body = await r.text();
+    if (body.includes("allowlist")) return "EGRESS BLOCKED — allow queue.fal.run, rest.fal.run and fal.media in the environment network settings";
+    if (!process.env.FAL_KEY) return "no key (mock image/video) — egress reachable";
+    if (r.status === 401 || r.status === 403) return "key present but rejected — check FAL_KEY";
+    return `egress + key reachable (status ${r.status})`;
+  });
   process.exit(0);
 }
 
