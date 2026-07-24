@@ -31,8 +31,15 @@ export function getProviders({ forceMock = false } = {}) {
         (await pickAsync("tts", "ELEVENLABS_API_KEY", el, mockMedia, forceMock)).generateLineAudio(args),
     },
     music: {
-      generateMusic: async (args) =>
-        (await pickAsync("music", "ELEVENLABS_API_KEY", el, mockMedia, forceMock)).generateMusic(args),
+      // MUSIC_PROVIDER=apiframe routes to the unofficial Suno wrapper
+      // (prototype-only, see providers/real/apiframe.js). Default: ElevenLabs.
+      generateMusic: async (args) => {
+        if (process.env.MUSIC_PROVIDER === "apiframe" && !forceMock && process.env.APIFRAME_API_KEY) {
+          const mod = await pickAsync("music", "APIFRAME_API_KEY", () => import("./real/apiframe.js"), mockMedia, forceMock);
+          return mod.generateMusic(args);
+        }
+        return (await pickAsync("music", "ELEVENLABS_API_KEY", el, mockMedia, forceMock)).generateMusic(args);
+      },
     },
     lipsync: {
       applyLipSync: async (args) =>
