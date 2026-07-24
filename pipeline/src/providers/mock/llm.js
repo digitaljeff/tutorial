@@ -1,6 +1,21 @@
 // Mock Screenwriter: deterministic structured script so the pipeline runs
 // end-to-end with zero API keys. Same output schema as the real provider.
 
+export async function generateSeason({ show, episodeCount = 6 }) {
+  return {
+    arc: {
+      destination: show.season_arc.destination,
+      acts: ["Establish the rivalry", "Escalating schemes backfire", "Accidental victory"],
+    },
+    episodes: Array.from({ length: episodeCount }, (_, i) => ({
+      number: i + 1,
+      title: `Mock Episode ${i + 1}`,
+      premise: `A ${show.title} situation escalates at the ${show.locations[0].name}.`,
+      arc_beat: "Advances the season arc (mock).",
+    })),
+  };
+}
+
 export async function generateScript({ show, idea }) {
   const [a, b] = show.characters; // two-hander
   const loc = show.locations[0].id;

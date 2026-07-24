@@ -36,7 +36,11 @@ export async function designVoice({ character }) {
     headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({
       voice_description: desc,
-      text: "You want the truth about this coffee? It has notes. Mostly notes of regret, but notes.",
+      // Preview text must be 100-1000 chars per the API.
+      text:
+        "You want the truth about this coffee? Fine. It has notes. Top notes of ambition, middle notes of panic, " +
+        "and a long, lingering finish of regret. But it's our regret, brewed fresh every single morning, " +
+        "and honestly? That's the most consistent thing about this entire establishment.",
     }),
   });
   if (!preview.ok) throw new Error(`ElevenLabs voice design ${preview.status}: ${await preview.text()}`);

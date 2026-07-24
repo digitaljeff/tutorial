@@ -32,16 +32,13 @@ async function download(url, outFile) {
   await writeFile(outFile, Buffer.from(await res.arrayBuffer()));
 }
 
-async function uploadToFal(localFile, contentType = "image/png") {
+// fal accepts base64 data URIs anywhere it takes an image URL — no storage
+// API dependency, no extra egress host.
+async function toDataUri(localFile) {
   const { readFile } = await import("node:fs/promises");
   const buf = await readFile(localFile);
-  const up = await fetch("https://rest.fal.run/storage/upload", {
-    method: "POST",
-    headers: { Authorization: `Key ${process.env.FAL_KEY}`, "Content-Type": contentType },
-    body: buf,
-  });
-  if (!up.ok) throw new Error(`fal upload ${up.status}: ${await up.text()}`);
-  return (await up.json()).url;
+  const ext = localFile.toLowerCase().endsWith(".jpg") || localFile.toLowerCase().endsWith(".jpeg") ? "jpeg" : "png";
+  return `data:image/${ext};base64,${buf.toString("base64")}`;
 }
 
 export async function generateKeyframe({ shot, show, outFile, referenceImages = [] }) {
@@ -51,12 +48,14 @@ export async function generateKeyframe({ shot, show, outFile, referenceImages = 
     negative_prompt: negative,
     image_size: { width: 1280, height: 720 },
   };
-  // Character sheets as identity references (Seedream edit / NB Pro style).
-  // Field name is model-dependent — verify per FAL_IMAGE_MODEL on first run.
+  // Character sheets as identity references: plain text-to-image models don't
+  // accept them — route to the edit/reference variant when refs are present.
+  let model = process.env.FAL_IMAGE_MODEL;
   if (referenceImages.length) {
-    input.image_urls = await Promise.all(referenceImages.map((f) => uploadToFal(f)));
+    model = process.env.FAL_IMAGE_EDIT_MODEL || "fal-ai/bytedance/seedream/v4.5/edit";
+    input.image_urls = await Promise.all(referenceImages.map(toDataUri));
   }
-  const out = await falQueue(process.env.FAL_IMAGE_MODEL, input);
+  const out = await falQueue(model, input);
   const url = out.images?.[0]?.url ?? out.image?.url;
   if (!url) throw new Error(`unexpected fal image output: ${JSON.stringify(out).slice(0, 300)}`);
   await download(url, outFile);
@@ -64,7 +63,7 @@ export async function generateKeyframe({ shot, show, outFile, referenceImages = 
 }
 
 export async function generateClip({ keyframe, keyframeUrl, shot, show, durationS, outFile }) {
-  const imageUrl = keyframeUrl ?? (await uploadToFal(keyframe));
+  const imageUrl = keyframeUrl ?? (await toDataUri(keyframe));
   const out = await falQueue(process.env.FAL_VIDEO_MODEL, {
     image_url: imageUrl,
     prompt: videoPrompt(show, shot),

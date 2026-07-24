@@ -57,9 +57,14 @@ export async function buildBible({ show, outRoot, forceMock = false, force = fal
     // stores the minted voice_id; mock path records the synth pitch.
     if (!cs.voice_id) {
       if (p.voice?.designVoice && !forceMock && process.env.ELEVENLABS_API_KEY) {
-        const { voice_id } = await p.voice.designVoice({ character: c });
-        cs.voice_id = voice_id;
-        log("bible", `voice designed for ${c.id}: ${voice_id}`);
+        try {
+          const { voice_id } = await p.voice.designVoice({ character: c });
+          cs.voice_id = voice_id;
+          log("bible", `voice designed for ${c.id}: ${voice_id}`);
+        } catch (e) {
+          log("bible", `WARN voice design for ${c.id} failed (${String(e.message).slice(0, 90)}) — will use default voice`);
+          cs.voice_id = null;
+        }
       } else {
         cs.voice_id = null; // mock TTS uses character.speech.mock_pitch_hz
         log("bible", `voice for ${c.id}: mock (design pending API key)`);

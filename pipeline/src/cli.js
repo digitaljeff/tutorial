@@ -7,6 +7,18 @@
 import { readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+
+// Node's fetch ignores HTTPS_PROXY unless NODE_USE_ENV_PROXY is set at startup.
+// In proxied environments (e.g. Claude Code cloud), re-exec once with it set so
+// all provider calls route through the egress proxy like every other tool.
+if (!process.env.NODE_USE_ENV_PROXY && (process.env.HTTPS_PROXY || process.env.https_proxy)) {
+  const r = spawnSync(process.execPath, process.argv.slice(1), {
+    stdio: "inherit",
+    env: { ...process.env, NODE_USE_ENV_PROXY: "1", NODE_NO_WARNINGS: "1" },
+  });
+  process.exit(r.status ?? 0);
+}
 import { demoShow } from "./bible/demo-show.js";
 import { produceEpisode } from "./stages/produce.js";
 import { run } from "./util.js";
@@ -84,6 +96,8 @@ if (cmd === "doctor") {
     });
     const body = await r.text();
     if (body.includes("allowlist")) return "EGRESS BLOCKED — allow api.elevenlabs.io in the environment network settings";
+    if (body.includes("missing_permissions"))
+      return "reachable; key is RESTRICTED (no user_read) — TTS may still work; consider granting all scopes";
     if (r.status === 401) return "BAD KEY (401)";
     if (r.status !== 200) return `unexpected ${r.status}: ${body.slice(0, 100)}`;
     const s = JSON.parse(body);
