@@ -19,7 +19,7 @@ export function characterSheets(bible, characterIds) {
   });
 }
 
-export async function produceEpisode({ show, idea, outRoot, forceMock = false }) {
+export async function produceEpisode({ show, idea, outRoot, forceMock = false, lipsync = true }) {
   const p = getProviders({ forceMock });
 
   // Stage 0 — ensure the show bible exists (sheets, voices, jingle).
@@ -102,7 +102,12 @@ export async function produceEpisode({ show, idea, outRoot, forceMock = false })
   );
   log("video", `${shots.length} keyframes + clips generated`);
 
-  // Stage 3c — music bed (covers cards + body)
+  // Stage 3c — lip sync every dialogue shot to its line audio
+  const { lipSyncShots } = await import("./lipsync.js");
+  for (const shot of shots) for (const lt of shot.line_times) lt.audioFile ??= lt.line._audioFile;
+  await lipSyncShots({ shots, providers: p, workDir: dirs.work, enabled: lipsync });
+
+  // Stage 3d — music bed (covers cards + body)
   const musicFile = path.join(dirs.audio, "music.wav");
   await p.music.generateMusic({
     durationS: Math.ceil(total_s + 6),

@@ -41,7 +41,10 @@ export function applyAudioTiming(shots, lineDurations) {
   let t = 0;
   for (const shot of shots) {
     const dialogue = shot.lines.reduce((s, l) => s + (lineDurations.get(l) ?? 0), 0);
-    shot.duration_s = Math.max(shot.base_duration_s, +(dialogue + 0.6).toFixed(2));
+    // Dialogue shots have a 2.5s floor: lip-sync models require >=2s of audio,
+    // and sub-2s singles cut too fast anyway.
+    const floor = shot.lines.length ? 2.5 : shot.base_duration_s;
+    shot.duration_s = Math.max(floor, shot.base_duration_s, +(dialogue + 0.6).toFixed(2));
     shot.start_s = +t.toFixed(2);
     // Lines start 0.3s into the shot, sequential.
     let lt = t + 0.3;

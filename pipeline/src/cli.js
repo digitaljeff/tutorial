@@ -180,6 +180,7 @@ if (cmd === "review") {
     idea,
     outRoot,
     forceMock: flag("mock"),
+    lipsync: !flag("no-lipsync"),
   });
   console.log(`\nDone in ${((Date.now() - t0) / 1000).toFixed(1)}s -> ${outFile}`);
   process.exit(0);

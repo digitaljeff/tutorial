@@ -8,6 +8,7 @@ const UNIT = {
   video_per_s: 0.052, // Seedance 1.5 Pro 720p w/ audio (~$0.26 per 5s)
   tts_per_char: 0.0001, // ElevenLabs multilingual ~$0.10/1k chars
   music_per_min: 0.15, // ElevenLabs Music (verify tier)
+  lipsync_per_shot: 0.05, // Kling LipSync via fal (verify billed rate)
   sheet_image: 0.04, // per character-sheet view
   voice_design: 0.1, // per designed voice (preview text credits)
 };
@@ -20,6 +21,11 @@ export function quoteEpisode({ shots, script }) {
     { item: "keyframes", qty: shots.length, usd: shots.length * UNIT.keyframe },
     { item: `video (${videoSeconds.toFixed(0)}s)`, qty: shots.length, usd: videoSeconds * UNIT.video_per_s },
     { item: `dialogue TTS (${chars} chars)`, qty: chars, usd: chars * UNIT.tts_per_char },
+    {
+      item: "lip sync (dialogue shots)",
+      qty: shots.filter((s) => (s.lines ?? []).length).length,
+      usd: shots.filter((s) => (s.lines ?? []).length).length * UNIT.lipsync_per_shot,
+    },
     { item: "music bed", qty: 1, usd: (videoSeconds / 60) * UNIT.music_per_min },
   ];
   const total = items.reduce((s, i) => s + i.usd, 0);

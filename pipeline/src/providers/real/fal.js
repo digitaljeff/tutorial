@@ -34,11 +34,12 @@ async function download(url, outFile) {
 
 // fal accepts base64 data URIs anywhere it takes an image URL — no storage
 // API dependency, no extra egress host.
+const MIME = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", mp4: "video/mp4", wav: "audio/wav", mp3: "audio/mpeg" };
 async function toDataUri(localFile) {
   const { readFile } = await import("node:fs/promises");
   const buf = await readFile(localFile);
-  const ext = localFile.toLowerCase().endsWith(".jpg") || localFile.toLowerCase().endsWith(".jpeg") ? "jpeg" : "png";
-  return `data:image/${ext};base64,${buf.toString("base64")}`;
+  const ext = localFile.toLowerCase().split(".").pop();
+  return `data:${MIME[ext] ?? "application/octet-stream"};base64,${buf.toString("base64")}`;
 }
 
 export async function generateKeyframe({ shot, show, outFile, referenceImages = [] }) {
@@ -58,6 +59,20 @@ export async function generateKeyframe({ shot, show, outFile, referenceImages = 
   const out = await falQueue(model, input);
   const url = out.images?.[0]?.url ?? out.image?.url;
   if (!url) throw new Error(`unexpected fal image output: ${JSON.stringify(out).slice(0, 300)}`);
+  await download(url, outFile);
+  return { file: outFile };
+}
+
+// Lip sync: re-animates the mouth in an existing clip to match dialogue audio.
+// Kling LipSync accepts data URIs; audio must be >= 2s (pipeline pads to the
+// clip duration, and dialogue shots have a 2.5s floor).
+export async function applyLipSync({ clipFile, audioFile, outFile }) {
+  const out = await falQueue(process.env.FAL_LIPSYNC_MODEL || "fal-ai/kling-video/lipsync/audio-to-video", {
+    video_url: await toDataUri(clipFile),
+    audio_url: await toDataUri(audioFile),
+  });
+  const url = out.video?.url;
+  if (!url) throw new Error(`unexpected lipsync output: ${JSON.stringify(out).slice(0, 300)}`);
   await download(url, outFile);
   return { file: outFile };
 }

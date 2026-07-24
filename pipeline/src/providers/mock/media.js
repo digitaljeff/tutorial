@@ -50,6 +50,15 @@ export async function generateLineAudio({ line, character, outFile }) {
   return { file: outFile, durationS };
 }
 
+// Lip sync mock: passthrough — the clip already exists, nothing to move.
+export async function applyLipSync({ clipFile, outFile }) {
+  if (clipFile !== outFile) {
+    const { copyFile } = await import("node:fs/promises");
+    await copyFile(clipFile, outFile);
+  }
+  return { file: outFile };
+}
+
 // Music bed: soft two-note pad long enough to cover the episode.
 export async function generateMusic({ durationS, outFile }) {
   await ffmpeg([

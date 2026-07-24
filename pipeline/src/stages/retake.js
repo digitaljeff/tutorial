@@ -44,6 +44,10 @@ export async function retakeShot({ epDir, shotIdx, note, outRoot, forceMock = fa
     durationS: shot.duration_s,
     outFile: shot.clipFile,
   });
+  if (shot.line_times?.length) {
+    const { lipSyncShots } = await import("./lipsync.js");
+    await lipSyncShots({ shots: [shot], providers: p, workDir: path.join(epDir, "work") });
+  }
 
   const outFile = path.join(epDir, "episode.mp4");
   await assemble({
