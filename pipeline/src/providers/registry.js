@@ -15,6 +15,8 @@ export function getProviders({ forceMock = false } = {}) {
     llm: {
       generateScript: async (args) =>
         (await pickAsync("llm", "ANTHROPIC_API_KEY", anthropic, mockLLM, forceMock)).generateScript(args),
+      generateSeason: async (args) =>
+        (await pickAsync("llm", "ANTHROPIC_API_KEY", anthropic, mockLLM, forceMock)).generateSeason(args),
     },
     image: {
       generateKeyframe: async (args) =>

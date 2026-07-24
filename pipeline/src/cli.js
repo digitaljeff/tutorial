@@ -126,6 +126,25 @@ if (cmd === "bible") {
   process.exit(0);
 }
 
+if (cmd === "season") {
+  const { getProviders } = await import("./providers/registry.js");
+  const { writeFile, mkdir } = await import("node:fs/promises");
+  const p = getProviders({ forceMock: flag("mock") });
+  const season = await p.llm.generateSeason({ show: demoShow, episodeCount: Number(opt("episodes", "6")) });
+  const dir = path.join(opt("out", path.join(root, "out")), "bible", demoShow.id);
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, "season.json"), JSON.stringify(season, null, 2));
+  console.log(`\nSEASON ARC — destination: ${season.arc.destination}\n`);
+  season.arc.acts.forEach((a, i) => console.log(`  Act ${i + 1}: ${a}`));
+  console.log("\nEPISODE SLATE:");
+  for (const e of season.episodes) {
+    console.log(`\n  ${e.number}. ${e.title}\n     ${e.premise}\n     arc: ${e.arc_beat}`);
+  }
+  console.log(`\nSaved -> ${path.join(dir, "season.json")}`);
+  console.log(`Produce one with: node src/cli.js produce --idea "<premise>"`);
+  process.exit(0);
+}
+
 if (cmd === "retake") {
   const { retakeShot } = await import("./stages/retake.js");
   const epDir = opt("ep");
