@@ -16,3 +16,13 @@ The easiest way to create, produce, and publish AI-generated sitcoms and seriali
 | 07 | [Roadmap & API keys needed](docs/plan/07-roadmap.md) |
 | 08 | [Risks & legal](docs/plan/08-risks-and-legal.md) |
 | 09 | [Competitive landscape](docs/plan/09-competitive-landscape.md) |
+
+## Studio (Phase 1 MVP)
+
+Web app over the pipeline: dashboard, show bible, episode pages with shot-board retakes, and produce-from-slate.
+
+```bash
+cd studio && npm install && npm run build && npm start   # http://localhost:3000
+```
+
+Requires the pipeline set up first (see `pipeline/README.md`) — the studio reads/writes `pipeline/out/`.
