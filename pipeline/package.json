@@ -1,0 +1,14 @@
+{
+  "name": "@backlot/pipeline",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Backlot Phase 0 pipeline spike: episode idea -> script -> shots -> clips -> assembled MP4. Zero npm deps; requires Node >= 20 and ffmpeg on PATH.",
+  "scripts": {
+    "produce": "node src/cli.js produce",
+    "doctor": "node src/cli.js doctor"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
