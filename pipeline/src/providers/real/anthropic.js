@@ -18,6 +18,50 @@ Rules: total spoken text must fit the target runtime (~14 chars/second of speech
 2-4 scenes. Every scene ends on a button (a punchline beat). delivery_tags is a
 short bracketed emotional direction like "[dry]" or "[tense]".`;
 
+// Fast Start (docs/plan/01 §B): draft an entire show bible from a logline.
+// Output matches the shows.js schema exactly; the Director edits/approves.
+export async function generateBible({ logline, title, id }) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5",
+      max_tokens: 4000,
+      system:
+        "You are the Fast Start agent for an AI sitcom studio: from a logline you draft a complete, production-ready show bible. " +
+        "Characters must be visually distinctive and DESCRIBABLE (specific hair, glasses/accessories, exact clothing colors) because the descriptor is reused verbatim in every image prompt. " +
+        "Voices must contrast (different genders/registers/paces). Return ONLY valid JSON:\n" +
+        `{
+  "id": string (kebab-case slug),
+  "title": string, "logline": string,
+  "format": {"preset": string, "target_runtime_s": 60, "aspect": "16:9", "rating": "PG", "laugh_track": false},
+  "style_guide": {"visual": string (art style + palette + lighting, one line), "visual_negative": string, "writing": string (comedy rules, rhythm, POV)},
+  "sound_kit": {"score_mood": string, "intro_jingle": string (describe an 8s sting)},
+  "characters": [2-3 of {"id","name","role":"protagonist|foil|recurring",
+     "appearance":{"canonical_descriptor": string (NAME, age, build, hair, face, exact outfit with colors)},
+     "personality":{"traits":[3],"wants":string,"comedic_function":string},
+     "speech":{"voice_hint":string (gender, age, register, pace, accent),"verbal_tics":[1-2],"delivery_tags_default":"[...]"}}],
+  "locations": [2 of {"id","name","canonical_descriptor": string (set dressing details), "mock_color":"0xRRGGBB"}],
+  "season_arc": {"destination": string (where season 1 ends), "current_beat": "Episode 1: ..."}
+}`,
+      messages: [
+        {
+          role: "user",
+          content: `LOGLINE: ${logline}${title ? `\nTITLE (use this): ${title}` : ""}${id ? `\nID (use this): ${id}` : ""}\n\nDraft the show bible as JSON.`,
+        },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`Anthropic API ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  const text = data.content.map((b) => b.text ?? "").join("");
+  return JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+}
+
 // Keyframe QC (docs/plan/04 stage 3a): cheap Haiku vision check BEFORE video
 // spend — is the person count right, are characters on-model, any obvious
 // artifacts (extra limbs, text panels)?

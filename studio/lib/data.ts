@@ -1,40 +1,42 @@
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 
 // The pipeline is the engine; the studio reads its artifacts directly.
 // Postgres replaces this file-backed layer when auth/multi-tenant lands.
 export const PIPELINE_ROOT = path.resolve(process.cwd(), "..", "pipeline");
 export const OUT_ROOT = path.join(PIPELINE_ROOT, "out");
+export const SHOWS_ROOT = path.join(PIPELINE_ROOT, "shows");
 
-export type Character = {
-  id: string;
-  name: string;
-  role: string;
-  appearance: { canonical_descriptor: string };
-  personality: { traits: string[]; wants: string; comedic_function: string };
-  speech: { voice_id: string | null; voice_hint?: string; delivery_tags_default: string };
-};
+const SHOW_ID = /^[a-z0-9-]{2,40}$/;
 
-export async function getShow() {
-  const mod = await import(
-    /* webpackIgnore: true */ pathToFileURL(path.join(PIPELINE_ROOT, "src", "bible", "demo-show.js")).href
-  );
-  return mod.demoShow;
+export function listShows() {
+  if (!existsSync(SHOWS_ROOT)) return [];
+  return readdirSync(SHOWS_ROOT)
+    .filter((d) => existsSync(path.join(SHOWS_ROOT, d, "show.json")))
+    .map((d) => JSON.parse(readFileSync(path.join(SHOWS_ROOT, d, "show.json"), "utf8")));
 }
 
-export function getBibleState() {
-  const f = path.join(OUT_ROOT, "bible", "steamed", "state.json");
+export function getShow(id: string) {
+  if (!SHOW_ID.test(id)) return null;
+  const f = path.join(SHOWS_ROOT, id, "show.json");
   return existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : null;
 }
 
-export function getSeason() {
-  const f = path.join(OUT_ROOT, "bible", "steamed", "season.json");
+export function getBibleState(showId: string) {
+  if (!SHOW_ID.test(showId)) return null;
+  const f = path.join(OUT_ROOT, "bible", showId, "state.json");
+  return existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : null;
+}
+
+export function getSeason(showId: string) {
+  if (!SHOW_ID.test(showId)) return null;
+  const f = path.join(OUT_ROOT, "bible", showId, "season.json");
   return existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : null;
 }
 
 export type EpisodeSummary = {
   id: string;
+  showId: string;
   title: string;
   shots: number;
   qcFlags: number;
@@ -45,7 +47,7 @@ export type EpisodeSummary = {
   hasVideo: boolean;
 };
 
-export function listEpisodes(): EpisodeSummary[] {
+export function listEpisodes(showId?: string): EpisodeSummary[] {
   if (!existsSync(OUT_ROOT)) return [];
   return readdirSync(OUT_ROOT)
     .filter((d) => d.startsWith("ep-"))
@@ -55,8 +57,10 @@ export function listEpisodes(): EpisodeSummary[] {
       if (!existsSync(mf)) return null;
       try {
         const m = JSON.parse(readFileSync(mf, "utf8"));
+        if (showId && m.show_id !== showId) return null;
         return {
           id: d,
+          showId: m.show_id,
           title: m.script?.title ?? d,
           shots: m.shots?.length ?? 0,
           qcFlags: (m.shots ?? []).filter((s: any) => s.qc && s.qc.pass === false).length,

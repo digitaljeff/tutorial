@@ -12,13 +12,12 @@ export function JobWatcher({ jobId }: { jobId: string }) {
     const tick = async () => {
       try {
         const r = await fetch(`/api/jobs/${jobId}`);
-        if (!r.ok) return;
-        const s = await r.json();
-        if (!alive) return;
-        setStatus(s);
-        if (s.done && s.episodeId) {
-          router.push(`/episodes/${s.episodeId}`);
-          return;
+        if (r.ok) {
+          const s = await r.json();
+          if (!alive) return;
+          setStatus(s);
+          if (s.done && s.showId) { router.push(`/shows/${s.showId}`); return; }
+          if (s.done && s.episodeId) { router.push(`/episodes/${s.episodeId}`); return; }
         }
       } catch {}
       if (alive) setTimeout(tick, 4000);

@@ -19,9 +19,9 @@ if (!process.env.NODE_USE_ENV_PROXY && (process.env.HTTPS_PROXY || process.env.h
   });
   process.exit(r.status ?? 0);
 }
-import { demoShow } from "./bible/demo-show.js";
+import { loadShow, listShows, saveShow, validateShow } from "./bible/shows.js";
 import { produceEpisode } from "./stages/produce.js";
-import { run } from "./util.js";
+import { run, log, slug } from "./util.js";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 
@@ -119,10 +119,52 @@ if (cmd === "doctor") {
 }
 
 if (cmd === "bible") {
+  const show = await resolveShow();
   const { buildBible } = await import("./stages/bible.js");
   const { quoteBible, printQuote } = await import("./cost.js");
-  printQuote("Bible build quote", quoteBible({ show: demoShow }), { mock: flag("mock") || !process.env.FAL_KEY });
-  await buildBible({ show: demoShow, outRoot: opt("out", path.join(root, "out")), forceMock: flag("mock"), force: flag("force") });
+  printQuote("Bible build quote", quoteBible({ show }), { mock: flag("mock") || !process.env.FAL_KEY });
+  await buildBible({ show, outRoot: opt("out", path.join(root, "out")), forceMock: flag("mock"), force: flag("force") });
+  process.exit(0);
+}
+
+// Every show-scoped command takes --show <id>; defaults to the only show, or "steamed".
+async function resolveShow() {
+  const id = opt("show");
+  if (id) return loadShow(id);
+  const all = await listShows();
+  if (all.length === 1) return all[0];
+  return loadShow("steamed");
+}
+
+if (cmd === "shows") {
+  for (const s of await listShows()) console.log(`${s.id.padEnd(20)} ${s.title} — ${s.logline}`);
+  process.exit(0);
+}
+
+if (cmd === "create-show") {
+  // Fast Start: logline -> full drafted bible -> sheets/voices/jingle -> season.
+  const logline = opt("logline");
+  if (!logline) { console.error('create-show requires --logline "..."'); process.exit(1); }
+  const { getProviders } = await import("./providers/registry.js");
+  const p = getProviders({ forceMock: flag("mock") });
+  log("faststart", `drafting bible from logline: "${logline}"`);
+  const draft = await p.llm.generateBible({ logline, title: opt("title"), id: opt("id") && slug(opt("id")) });
+  draft.id = slug(draft.id ?? draft.title);
+  const errors = validateShow(draft);
+  if (errors.length) { console.error("Fast Start draft invalid:\n- " + errors.join("\n- ")); process.exit(1); }
+  await saveShow(draft);
+  log("faststart", `show saved: ${draft.id} — "${draft.title}" (${draft.characters.length} characters, ${draft.locations.length} sets)`);
+
+  const { buildBible } = await import("./stages/bible.js");
+  await buildBible({ show: draft, outRoot: opt("out", path.join(root, "out")), forceMock: flag("mock") });
+
+  const season = await p.llm.generateSeason({ show: draft, episodeCount: Number(opt("episodes", "6")) });
+  const { writeFile: wf, mkdir: mk } = await import("node:fs/promises");
+  const bdir = path.join(opt("out", path.join(root, "out")), "bible", draft.id);
+  await mk(bdir, { recursive: true });
+  await wf(path.join(bdir, "season.json"), JSON.stringify(season, null, 2));
+  log("faststart", `season slate: ${season.episodes.length} episodes toward "${season.arc.destination.slice(0, 60)}..."`);
+  console.log(`SHOW READY ${draft.id}`);
   process.exit(0);
 }
 
@@ -159,11 +201,12 @@ if (cmd === "report") {
 }
 
 if (cmd === "season") {
+  const show = await resolveShow();
   const { getProviders } = await import("./providers/registry.js");
   const { writeFile, mkdir } = await import("node:fs/promises");
   const p = getProviders({ forceMock: flag("mock") });
-  const season = await p.llm.generateSeason({ show: demoShow, episodeCount: Number(opt("episodes", "6")) });
-  const dir = path.join(opt("out", path.join(root, "out")), "bible", demoShow.id);
+  const season = await p.llm.generateSeason({ show, episodeCount: Number(opt("episodes", "6")) });
+  const dir = path.join(opt("out", path.join(root, "out")), "bible", show.id);
   await mkdir(dir, { recursive: true });
   await writeFile(path.join(dir, "season.json"), JSON.stringify(season, null, 2));
   console.log(`\nSEASON ARC — destination: ${season.arc.destination}\n`);
@@ -204,11 +247,12 @@ if (cmd === "review") {
   });
   // keep process alive
 } else if (cmd === "produce") {
-  const idea = opt("idea", "the espresso machine breaks on rent day");
+  const show = await resolveShow();
+  const idea = opt("idea", "an ordinary day goes sideways");
   const outRoot = opt("out", path.join(root, "out"));
   const t0 = Date.now();
   const { outFile } = await produceEpisode({
-    show: demoShow,
+    show,
     idea,
     outRoot,
     forceMock: flag("mock"),

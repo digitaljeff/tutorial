@@ -9,9 +9,7 @@ import { assemble } from "./assemble.js";
 import { loadBibleState } from "./bible.js";
 import { characterSheets } from "./produce.js";
 import { log } from "../util.js";
-import { demoShow } from "../bible/demo-show.js";
-
-const SHOWS = { [demoShow.id]: demoShow }; // show registry (Postgres later)
+import { loadShow } from "../bible/shows.js";
 
 export async function loadManifest(epDir) {
   return JSON.parse(await readFile(path.join(epDir, "episode.json"), "utf8"));
@@ -20,8 +18,7 @@ export async function loadManifest(epDir) {
 export async function retakeShot({ epDir, shotIdx, note, outRoot, forceMock = false }) {
   const p = getProviders({ forceMock });
   const manifest = await loadManifest(epDir);
-  const show = SHOWS[manifest.show_id];
-  if (!show) throw new Error(`unknown show '${manifest.show_id}'`);
+  const show = await loadShow(manifest.show_id);
   const shot = manifest.shots.find((s) => s.idx === Number(shotIdx));
   if (!shot) throw new Error(`no shot ${shotIdx} in ${epDir}`);
   const bible = await loadBibleState(outRoot, show);

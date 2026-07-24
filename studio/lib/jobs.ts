@@ -10,7 +10,7 @@ const JOBS_DIR = path.join(OUT_ROOT, "jobs");
 
 export type Job = {
   id: string;
-  kind: "produce" | "retake";
+  kind: "produce" | "retake" | "create";
   args: Record<string, string>;
   startedAt: string;
   pid?: number;
@@ -44,14 +44,17 @@ export function getJobStatus(id: string) {
   const job: Job = JSON.parse(readFileSync(f, "utf8"));
   const log = path.join(JOBS_DIR, `${id}.log`);
   const text = existsSync(log) ? readFileSync(log, "utf8") : "";
-  const done = /\bdone\s+episode at|Reassembled ->|Error|FAILED/.test(text) && !isRunning(job.pid);
-  // Find the episode dir the job produced (logged as "episode at <path>").
+  const done =
+    /\bdone\s+episode at|SHOW READY|Reassembled ->|Error|FAILED/.test(text) && !isRunning(job.pid);
+  // Find what the job produced (logged as "episode at <path>" / "SHOW READY <id>").
   const epMatch = text.match(/episode at .*\/(ep-\d+)\//);
+  const showMatch = text.match(/SHOW READY ([a-z0-9-]+)/);
   return {
     job,
     running: isRunning(job.pid),
     done,
     episodeId: epMatch?.[1] ?? null,
+    showId: job.kind === "create" ? showMatch?.[1] ?? null : null,
     logTail: text.split("\n").slice(-25).join("\n"),
   };
 }

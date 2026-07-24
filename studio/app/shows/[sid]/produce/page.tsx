@@ -1,25 +1,30 @@
-import { getSeason, listEpisodes } from "@/lib/data";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getShow, getSeason, listEpisodes } from "@/lib/data";
 import { startProduce } from "@/lib/actions";
 
 export const dynamic = "force-dynamic";
 
-export default function ProducePage() {
-  const season = getSeason();
-  const producedTitles = new Set(listEpisodes().map((e) => e.title.toLowerCase()));
+export default async function ProducePage(props: { params: Promise<{ sid: string }> }) {
+  const { sid } = await props.params;
+  const show = getShow(sid);
+  if (!show) notFound();
+  const season = getSeason(sid);
+  const producedTitles = new Set(listEpisodes(sid).map((e) => e.title.toLowerCase()));
 
   return (
     <div className="max-w-3xl space-y-8">
       <header>
-        <h1 className="text-2xl font-bold text-zinc-50">Produce an episode</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Script → approval-free spike mode → shots → clips → voices → lip sync → cut. ~10 minutes, ~$4.
-        </p>
+        <div className="text-xs text-zinc-600"><Link href={`/shows/${sid}`} className="hover:text-zinc-400">{show.title}</Link> / produce</div>
+        <h1 className="mt-1 text-2xl font-bold text-zinc-50">Produce an episode</h1>
+        <p className="mt-1 text-sm text-zinc-500">Script → shots → clips → voices → lip sync → cut. ~10 minutes, ~$4.</p>
       </header>
 
       <form action={startProduce} className="rounded-lg border border-zinc-800 bg-[#17171f] p-5">
+        <input type="hidden" name="show" value={sid} />
         <label className="text-sm font-medium text-zinc-300">Your episode idea</label>
         <textarea name="idea" rows={3} required
-          placeholder="e.g. Dana tries to win back a one-star reviewer who turns out to be Mo's cousin"
+          placeholder="what happens this episode?"
           className="mt-2 w-full rounded border border-zinc-700 bg-zinc-900 p-3 text-sm text-zinc-200 placeholder:text-zinc-600" />
         <button className="mt-3 rounded bg-amber-400 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-amber-300">
           Produce episode
@@ -35,6 +40,7 @@ export default function ProducePage() {
               return (
                 <form key={e.number} action={startProduce}
                   className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-[#17171f] p-3">
+                  <input type="hidden" name="show" value={sid} />
                   <input type="hidden" name="idea" value={`${e.title}: ${e.premise}`} />
                   <div className="min-w-0 flex-1">
                     <div className="text-sm font-medium text-zinc-200">

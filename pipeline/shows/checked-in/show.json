@@ -1,0 +1,126 @@
+{
+  "id": "checked-in",
+  "title": "Checked In",
+  "logline": "a mockumentary about the overnight crew of a barely-haunted budget motel where the ghost is more of a roommate than a menace",
+  "format": {
+    "preset": "mockumentary",
+    "target_runtime_s": 60,
+    "aspect": "16:9",
+    "rating": "PG",
+    "laugh_track": false
+  },
+  "style_guide": {
+    "visual": "desaturated indie mockumentary aesthetic with fluorescent overhead lighting, muted teals and yellows, grainy handheld documentary camera work with occasional static glitches during ghost appearances",
+    "visual_negative": "polished, glamorous, supernatural horror, dark shadows, vibrant colors, cinematic lighting",
+    "writing": "deadpan talking-heads interspersed with mundane workplace absurdism; comedy derives from characters treating the supernatural as bureaucratic inconvenience; awkward pauses and uncomfortable eye contact with camera; underreaction is the rule"
+  },
+  "sound_kit": {
+    "score_mood": "sparse indie folk with lonely electric guitar, muzak versions of public domain songs, the hum of ice machines",
+    "intro_jingle": "8 seconds of warped elevator music that briefly distorts with static before a tired ding of a front desk bell, ending on a sustained synth drone"
+  },
+  "characters": [
+    {
+      "id": "marina",
+      "name": "Marina Voss",
+      "role": "protagonist",
+      "appearance": {
+        "canonical_descriptor": "Marina Voss, 32, average build, shoulder-length straight black hair with blunt bangs, round tortoiseshell glasses, tired eyes with dark circles, wearing a wrinkled maroon polo shirt with name tag and khaki slacks, black non-slip shoes"
+      },
+      "personality": {
+        "traits": [
+          "wearily pragmatic",
+          "conflict-averse",
+          "secretly lonely"
+        ],
+        "wants": "to make it through her shift without incident and maybe feel less invisible",
+        "comedic_function": "straight-woman anchor who treats impossible situations as minor scheduling problems"
+      },
+      "speech": {
+        "voice_hint": "female, early 30s, flat midwestern affect, measured pace, slightly nasal, monotone",
+        "verbal_tics": [
+          "so yeah",
+          "I mean"
+        ],
+        "delivery_tags_default": "[deadpan][to camera][exhausted patience]",
+        "voice_provider": "elevenlabs",
+        "voice_id": null,
+        "mock_pitch_hz": 332
+      }
+    },
+    {
+      "id": "doug",
+      "name": "Doug Pemberton",
+      "role": "foil",
+      "appearance": {
+        "canonical_descriptor": "Doug Pemberton, 28, lanky build, messy ginger hair sticking up in all directions, patchy beard, eager expression, wearing an oversized blue windbreaker over orange graphic tee with cartoon frog, baggy jeans with wallet chain, red high-top sneakers"
+      },
+      "personality": {
+        "traits": [
+          "overeager",
+          "conspiracy-prone",
+          "genuinely sweet"
+        ],
+        "wants": "to document proof of the paranormal and be taken seriously for once",
+        "comedic_function": "overreacts to everything, misreads situations, accidentally makes things worse while trying to help"
+      },
+      "speech": {
+        "voice_hint": "male, late 20s, excitable high register, rapid-fire pace, slight lisp, breathless",
+        "verbal_tics": [
+          "dude",
+          "okay so here's the thing"
+        ],
+        "delivery_tags_default": "[enthusiastic][conspiratorial whisper][way too loud]",
+        "voice_provider": "elevenlabs",
+        "voice_id": null,
+        "mock_pitch_hz": 291
+      }
+    },
+    {
+      "id": "phyllis",
+      "name": "Phyllis",
+      "role": "recurring",
+      "appearance": {
+        "canonical_descriptor": "Phyllis, appears 60s, translucent and slightly flickering, short curly gray hair, cat-eye glasses on chain, wearing a powder blue 1970s pantsuit with wide collar, pearl clip-on earrings, sensible cream loafers, holding a spectral clipboard"
+      },
+      "personality": {
+        "traits": [
+          "fastidious",
+          "passive-aggressive",
+          "petty"
+        ],
+        "wants": "respect for the motel rules she wrote in 1978 and acknowledgment of her organizational contributions",
+        "comedic_function": "mundane ghost who complains about noise levels and thermostat settings rather than seeking vengeance"
+      },
+      "speech": {
+        "voice_hint": "female, mature, clipped precise diction, slow deliberate pace, tight-lipped disapproval, slight midwestern accent",
+        "verbal_tics": [
+          "well I never",
+          "in my day"
+        ],
+        "delivery_tags_default": "[pursed lips][disappointed sigh][condescending]",
+        "voice_provider": "elevenlabs",
+        "voice_id": null,
+        "mock_pitch_hz": 313
+      }
+    }
+  ],
+  "locations": [
+    {
+      "id": "front-desk",
+      "name": "Front Desk",
+      "canonical_descriptor": "cramped front desk area with scuffed laminate counter, ancient beige computer monitor, rack of faded tourist brochures, water-stained acoustic ceiling tiles, flickering fluorescent lights, worn industrial carpet in burgundy and gold pattern, wall-mounted bell, plastic plant in corner",
+      "mock_color": "0x8B7355"
+    },
+    {
+      "id": "break-room",
+      "name": "Break Room",
+      "canonical_descriptor": "windowless break room with small round table, mismatched plastic chairs, humming mini-fridge covered in passive-aggressive notes, ancient microwave, cork board with OSHA posters and decade-old safety memos, yellowed walls, buzzing fluorescent strip light, coffee maker with permanent stains",
+      "mock_color": "0xD4C5A9"
+    }
+  ],
+  "season_arc": {
+    "destination": "The crew reluctantly admits they've become found family; Phyllis finally feels seen when they throw her a 45th death-iversary party; Marina accepts the night manager promotion she's been avoiding",
+    "current_beat": "Episode 1: A documentary crew arrives to film the 'haunted' Slumber Valley Inn; Marina insists there's nothing interesting to document while Phyllis floats through frame complaining about the camera crew not having a permit"
+  },
+  "canon_digest": "Pilot. Nothing established yet beyond the bible."
+}

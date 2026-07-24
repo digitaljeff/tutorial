@@ -1,19 +1,22 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
 import { getShow, getBibleState, getSeason, mediaUrl } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-export default async function ShowBible() {
-  const show = await getShow();
-  const bible = getBibleState();
-  const season = getSeason();
+export default async function ShowBible(props: { params: Promise<{ sid: string }> }) {
+  const { sid } = await props.params;
+  const show = getShow(sid);
+  if (!show) notFound();
+  const bible = getBibleState(sid);
+  const season = getSeason(sid);
 
   return (
     <div className="space-y-10">
       <header>
-        <h1 className="text-2xl font-bold text-zinc-50">Show Bible</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          The persistent knowledge base every generation draws from. Edit-in-app comes with the Postgres bible.
-        </p>
+        <div className="text-xs text-zinc-600"><Link href={`/shows/${sid}`} className="hover:text-zinc-400">{show.title}</Link> / bible</div>
+        <h1 className="mt-1 text-2xl font-bold text-zinc-50">Show Bible</h1>
+        <p className="mt-1 text-sm text-zinc-500">The persistent knowledge base every generation draws from.</p>
       </header>
 
       <section>
@@ -25,8 +28,7 @@ export default async function ShowBible() {
               <div key={c.id} className="rounded-lg border border-zinc-800 bg-[#17171f] p-4">
                 <div className="flex gap-4">
                   {state?.sheets?.front && (
-                    <img src={mediaUrl(state.sheets.front)} alt={c.name}
-                      className="h-40 w-28 rounded object-cover" />
+                    <img src={mediaUrl(state.sheets.front)} alt={c.name} className="h-40 w-28 rounded object-cover" />
                   )}
                   <div className="min-w-0">
                     <div className="font-bold text-zinc-50">{c.name}

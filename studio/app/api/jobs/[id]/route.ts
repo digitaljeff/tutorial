@@ -8,6 +8,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     running: status.running,
     done: status.done,
     episodeId: status.episodeId,
+    showId: status.showId,
     logTail: status.logTail,
   });
 }

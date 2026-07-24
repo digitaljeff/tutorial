@@ -1,6 +1,41 @@
 // Mock Screenwriter: deterministic structured script so the pipeline runs
 // end-to-end with zero API keys. Same output schema as the real provider.
 
+export async function generateBible({ logline, title, id }) {
+  const slug = id ?? (title ?? logline).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 24);
+  return {
+    id: slug,
+    title: title ?? `Mock: ${logline.slice(0, 30)}`,
+    logline,
+    format: { preset: "multi-cam-sitcom", target_runtime_s: 60, aspect: "16:9", rating: "PG", laugh_track: false },
+    style_guide: {
+      visual: "3D animated sitcom, warm palette",
+      visual_negative: "photorealistic, text overlays, extra people",
+      writing: "Two-hander banter, setup/punchline, PG.",
+    },
+    sound_kit: { score_mood: "light playful underscore", intro_jingle: "8 second bright sting" },
+    characters: [
+      {
+        id: "alex", name: "ALEX", role: "protagonist",
+        appearance: { canonical_descriptor: "ALEX, 30s, short black hair, blue jacket, white tee" },
+        personality: { traits: ["earnest", "anxious", "kind"], wants: "to keep it together", comedic_function: "escalator" },
+        speech: { voice_hint: "Female voice, 30s, bright mezzo, quick.", verbal_tics: ["nervous laugh"], delivery_tags_default: "[tense]" },
+      },
+      {
+        id: "sam", name: "SAM", role: "foil",
+        appearance: { canonical_descriptor: "SAM, 40s, shaved head, grey hoodie, calm eyes" },
+        personality: { traits: ["dry", "unbothered", "loyal"], wants: "a quiet day", comedic_function: "deadpan foil" },
+        speech: { voice_hint: "Male voice, 40s, low baritone, slow.", verbal_tics: ["one-word answers"], delivery_tags_default: "[dry]" },
+      },
+    ],
+    locations: [
+      { id: "main_set", name: "Main set", canonical_descriptor: "The main interior set of the show", mock_color: "0x33556b" },
+      { id: "back_room", name: "Back room", canonical_descriptor: "A cramped back room", mock_color: "0x4a5568" },
+    ],
+    season_arc: { destination: "They pull it off, together.", current_beat: "Episode 1: establish the world." },
+  };
+}
+
 export async function generateSeason({ show, episodeCount = 6 }) {
   return {
     arc: {

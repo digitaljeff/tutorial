@@ -17,13 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Backlot
             </Link>
             <div className="flex gap-4 text-sm text-zinc-400">
-              <Link href="/" className="hover:text-zinc-100">Dashboard</Link>
-              <Link href="/show" className="hover:text-zinc-100">Show Bible</Link>
-              <Link href="/episodes" className="hover:text-zinc-100">Episodes</Link>
-              <Link href="/produce" className="hover:text-zinc-100">Produce</Link>
+              <Link href="/" className="hover:text-zinc-100">Shows</Link>
             </div>
             <span className="ml-auto rounded bg-zinc-800 px-2 py-0.5 text-xs text-zinc-500">
-              Studio MVP · single-show mode
+              Studio MVP
             </span>
           </div>
         </nav>
