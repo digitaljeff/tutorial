@@ -22,6 +22,38 @@ export async function generateLineAudio({ line, character, outFile }) {
   return { file: outFile, durationS: await ffprobeDuration(outFile) };
 }
 
+// Voice Design: mint a synthetic voice from the character description
+// (no cloning consent needed — docs/plan/08). Two-step: generate previews,
+// then save the first preview as a permanent voice. Endpoint shapes per
+// ElevenLabs text-to-voice docs — verify against live docs on first run.
+export async function designVoice({ character }) {
+  const desc =
+    `${character.name}: ${character.personality.traits.join(", ")}. ` +
+    `Voice for an animated sitcom character. ${character.speech.delivery_tags_default} energy. ` +
+    `${character.role === "foil" ? "Low, unhurried, deadpan." : "Quick, bright, wound tight."}`;
+  const preview = await fetch("https://api.elevenlabs.io/v1/text-to-voice/design", {
+    method: "POST",
+    headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      voice_description: desc,
+      text: "You want the truth about this coffee? It has notes. Mostly notes of regret, but notes.",
+    }),
+  });
+  if (!preview.ok) throw new Error(`ElevenLabs voice design ${preview.status}: ${await preview.text()}`);
+  const { previews } = await preview.json();
+  const save = await fetch("https://api.elevenlabs.io/v1/text-to-voice", {
+    method: "POST",
+    headers: { "xi-api-key": process.env.ELEVENLABS_API_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      voice_name: `backlot-${character.id}`,
+      voice_description: desc,
+      generated_voice_id: previews[0].generated_voice_id,
+    }),
+  });
+  if (!save.ok) throw new Error(`ElevenLabs voice save ${save.status}: ${await save.text()}`);
+  return { voice_id: (await save.json()).voice_id };
+}
+
 // Music: ElevenLabs Music API (verify plan tier + pricing tomorrow, doc 05).
 export async function generateMusic({ durationS, prompt, outFile }) {
   const res = await fetch("https://api.elevenlabs.io/v1/music", {

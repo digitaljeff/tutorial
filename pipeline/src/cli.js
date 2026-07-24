@@ -48,7 +48,41 @@ if (cmd === "doctor") {
   process.exit(0);
 }
 
-if (cmd === "produce") {
+if (cmd === "bible") {
+  const { buildBible } = await import("./stages/bible.js");
+  const { quoteBible, printQuote } = await import("./cost.js");
+  printQuote("Bible build quote", quoteBible({ show: demoShow }), { mock: flag("mock") || !process.env.FAL_KEY });
+  await buildBible({ show: demoShow, outRoot: opt("out", path.join(root, "out")), forceMock: flag("mock"), force: flag("force") });
+  process.exit(0);
+}
+
+if (cmd === "retake") {
+  const { retakeShot } = await import("./stages/retake.js");
+  const epDir = opt("ep");
+  if (!epDir) { console.error("retake requires --ep <episode dir>"); process.exit(1); }
+  const { outFile } = await retakeShot({
+    epDir: path.resolve(epDir),
+    shotIdx: opt("shot"),
+    note: opt("note"),
+    outRoot: opt("out", path.join(root, "out")),
+    forceMock: flag("mock"),
+  });
+  console.log(`Reassembled -> ${outFile}`);
+  process.exit(0);
+}
+
+if (cmd === "review") {
+  const { serveReview } = await import("./review.js");
+  const epDir = opt("ep");
+  if (!epDir) { console.error("review requires --ep <episode dir>"); process.exit(1); }
+  await serveReview({
+    epDir: path.resolve(epDir),
+    outRoot: opt("out", path.join(root, "out")),
+    port: Number(opt("port", "4321")),
+    forceMock: flag("mock"),
+  });
+  // keep process alive
+} else if (cmd === "produce") {
   const idea = opt("idea", "the espresso machine breaks on rent day");
   const outRoot = opt("out", path.join(root, "out"));
   const t0 = Date.now();
@@ -62,7 +96,12 @@ if (cmd === "produce") {
   process.exit(0);
 }
 
-console.log(`Backlot pipeline (Phase 0 spike)
+if (cmd !== "review") {
+  console.log(`Backlot pipeline (Phase 0 spike)
 Usage:
+  node src/cli.js bible   [--mock] [--force]          build show bible (sheets, voices, jingle)
   node src/cli.js produce [--idea "episode idea"] [--mock] [--out DIR]
+  node src/cli.js retake  --ep out/ep-XXXX --shot N [--note "make it bigger"] [--mock]
+  node src/cli.js review  --ep out/ep-XXXX [--port 4321]
   node src/cli.js doctor`);
+}

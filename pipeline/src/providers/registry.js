@@ -32,6 +32,11 @@ export function getProviders({ forceMock = false } = {}) {
       generateMusic: async (args) =>
         (await pickAsync("music", "ELEVENLABS_API_KEY", el, mockMedia, forceMock)).generateMusic(args),
     },
+    voice: {
+      // Real-only capability (mock voices are pitch-mapped in mock TTS);
+      // callers gate on ELEVENLABS_API_KEY before invoking.
+      designVoice: async (args) => (await el()).designVoice(args),
+    },
   };
 }
 

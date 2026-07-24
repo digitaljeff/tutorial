@@ -58,7 +58,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 ${events}`;
 }
 
-export async function assemble({ shots, script, show, musicFile, workDir, outFile }) {
+export async function assemble({ shots, script, show, musicFile, jingleFile, workDir, outFile }) {
   const titleCard = await makeCard({
     line1: show.title,
     line2: script.title,
@@ -91,12 +91,20 @@ export async function assemble({ shots, script, show, musicFile, workDir, outFil
     lineEntries.length > 0
       ? `${delayFilters.join(";")};${lineEntries.map((_, i) => `[l${i}]`).join("")}amix=inputs=${lineEntries.length}:normalize=0[dlg]`
       : `anullsrc=r=44100:cl=stereo,atrim=0:1[dlg]`;
+  // Optional show jingle over the title card (bible asset, reused per episode).
+  const jingleIdx = jingleFile ? lineEntries.length + 1 : -1;
+  if (jingleFile) inputs.push("-i", jingleFile);
+  const finalInputs = jingleFile ? ["[d1]", "[mducked]", "[jin]"] : ["[d1]", "[mducked]"];
+  const jingleFilter = jingleFile
+    ? `;[${jingleIdx}:a]volume=0.7,afade=t=out:st=${CARD_S - 0.6}:d=0.6,atrim=0:${CARD_S + 0.5}[jin]`
+    : "";
   const filter =
     `${dlgMix};` +
     `[dlg]asplit=2[d1][sc];` +
     `[0:a]volume=0.9[mus];` +
-    `[mus][sc]sidechaincompress=threshold=0.03:ratio=8:attack=20:release=400[mducked];` +
-    `[d1][mducked]amix=inputs=2:normalize=0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`;
+    `[mus][sc]sidechaincompress=threshold=0.03:ratio=8:attack=20:release=400[mducked]` +
+    jingleFilter +
+    `;${finalInputs.join("")}amix=inputs=${finalInputs.length}:normalize=0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`;
   const audioMix = path.join(workDir, "audio.m4a");
   await ffmpeg(["-i", musicFile, ...inputs, "-filter_complex", filter, "-map", "[aout]", "-c:a", "aac", audioMix]);
   log("assemble", `audio track: ${lineEntries.length} dialogue lines + ducked music bed`);

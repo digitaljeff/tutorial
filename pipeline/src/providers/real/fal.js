@@ -32,15 +32,31 @@ async function download(url, outFile) {
   await writeFile(outFile, Buffer.from(await res.arrayBuffer()));
 }
 
-export async function generateKeyframe({ shot, show, outFile }) {
+async function uploadToFal(localFile, contentType = "image/png") {
+  const { readFile } = await import("node:fs/promises");
+  const buf = await readFile(localFile);
+  const up = await fetch("https://rest.fal.run/storage/upload", {
+    method: "POST",
+    headers: { Authorization: `Key ${process.env.FAL_KEY}`, "Content-Type": contentType },
+    body: buf,
+  });
+  if (!up.ok) throw new Error(`fal upload ${up.status}: ${await up.text()}`);
+  return (await up.json()).url;
+}
+
+export async function generateKeyframe({ shot, show, outFile, referenceImages = [] }) {
   const { prompt, negative } = keyframePrompt(show, shot);
-  const out = await falQueue(process.env.FAL_IMAGE_MODEL, {
+  const input = {
     prompt,
     negative_prompt: negative,
     image_size: { width: 1280, height: 720 },
-    // TODO tomorrow: pass character sheet asset URLs as reference images once
-    // sheets are generated (reference-to-image variants of Seedream/NB Pro).
-  });
+  };
+  // Character sheets as identity references (Seedream edit / NB Pro style).
+  // Field name is model-dependent — verify per FAL_IMAGE_MODEL on first run.
+  if (referenceImages.length) {
+    input.image_urls = await Promise.all(referenceImages.map((f) => uploadToFal(f)));
+  }
+  const out = await falQueue(process.env.FAL_IMAGE_MODEL, input);
   const url = out.images?.[0]?.url ?? out.image?.url;
   if (!url) throw new Error(`unexpected fal image output: ${JSON.stringify(out).slice(0, 300)}`);
   await download(url, outFile);
@@ -48,20 +64,7 @@ export async function generateKeyframe({ shot, show, outFile }) {
 }
 
 export async function generateClip({ keyframe, keyframeUrl, shot, show, durationS, outFile }) {
-  // fal i2v models take an image URL; for local files we'd upload to fal storage.
-  // Simplest path tomorrow: POST to https://fal.run/storage/upload — wired here.
-  let imageUrl = keyframeUrl;
-  if (!imageUrl) {
-    const { readFile } = await import("node:fs/promises");
-    const buf = await readFile(keyframe);
-    const up = await fetch("https://rest.fal.run/storage/upload", {
-      method: "POST",
-      headers: { Authorization: `Key ${process.env.FAL_KEY}`, "Content-Type": "image/png" },
-      body: buf,
-    });
-    if (!up.ok) throw new Error(`fal upload ${up.status}: ${await up.text()}`);
-    imageUrl = (await up.json()).url;
-  }
+  const imageUrl = keyframeUrl ?? (await uploadToFal(keyframe));
   const out = await falQueue(process.env.FAL_VIDEO_MODEL, {
     image_url: imageUrl,
     prompt: videoPrompt(show, shot),
