@@ -22,6 +22,8 @@ All prices are mid-2026 numbers from vendor docs + trackers; several official pa
 | Hailuo 2.3 | 6–10s | good motion | none | ~$0.19–0.49/clip | B-roll/action inserts |
 | Runway Gen-4.5 | — | Act-Two performance transfer | separate | ~$0.12–0.25/s (conflicting) | Niche: acting fidelity via human performance |
 
+**Audio-attached generation (tested July 2026):** Wan 2.5 i2v accepts our ElevenLabs line audio and generates the clip already speaking in that voice — one step instead of generate+lipsync, character stayed on-model in tests. **Blocked for now:** it burns transcribed subtitles into the frame (trained-in behavior with speech audio; `enable_subtitle:false` and negative prompts both failed) and clips are locked to 5s/10s. Revisit with **Wan 2.7 reference-to-video** (refs + audio in one endpoint) — if solved, dialogue shots become single-generation while Seedance keeps establishing/action shots.
+
 **Lip-sync post-passes:** Kling LipSync ($0.014 per 5s — dirt cheap, slow ~12min) for bulk; **sync.so lipsync-2-pro** ($0.067–0.083/s, needs $249/mo Scale plan) for rescue-quality fixes. Hedra Character-3 (~6 credits/s; audio-driven full character video ≈ $2/60s effective) is a candidate for close-up talking shots but is talking-head-oriented, not scene blocking.
 
 **Chosen video strategy (60s episode, 8–10 shots):**

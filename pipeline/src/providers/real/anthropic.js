@@ -47,7 +47,8 @@ export async function checkKeyframe({ imageFile, shot, show }) {
       system:
         'You QC animation keyframes. Return ONLY JSON: {"person_count": int, "on_model": bool, "artifacts": string[], "pass": bool}. ' +
         "pass=false if person_count is wrong, a listed character is clearly off-model (wrong hair/glasses/clothing colors), " +
-        "there is rendered text/panels in frame, or a glaring anatomy artifact (extra hands/limbs, floating body parts).",
+        "there is OVERLAY text (subtitles, captions, floating panels, watermarks), or a glaring anatomy artifact (extra hands/limbs, floating body parts). " +
+        "Diegetic text is FINE and must not fail QC: signs, chalkboard menus, labels, and posters that exist inside the scene as physical set dressing.",
       messages: [
         {
           role: "user",
