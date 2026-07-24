@@ -18,6 +18,56 @@ Rules: total spoken text must fit the target runtime (~14 chars/second of speech
 2-4 scenes. Every scene ends on a button (a punchline beat). delivery_tags is a
 short bracketed emotional direction like "[dry]" or "[tense]".`;
 
+// Keyframe QC (docs/plan/04 stage 3a): cheap Haiku vision check BEFORE video
+// spend — is the person count right, are characters on-model, any obvious
+// artifacts (extra limbs, text panels)?
+export async function checkKeyframe({ imageFile, shot, show }) {
+  const { readFile } = await import("node:fs/promises");
+  const buf = await readFile(imageFile);
+  // fal serves JPEGs regardless of the extension we save under — sniff magic bytes.
+  const mediaType = buf[0] === 0xff && buf[1] === 0xd8 ? "image/jpeg" : "image/png";
+  const b64 = buf.toString("base64");
+  const expected = shot.character_ids.length;
+  const who = shot.character_ids
+    .map((id) => {
+      const c = show.characters.find((x) => x.id === id);
+      return `${c.name}: ${c.appearance.canonical_descriptor}`;
+    })
+    .join("\n");
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": process.env.ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 300,
+      system:
+        'You QC animation keyframes. Return ONLY JSON: {"person_count": int, "on_model": bool, "artifacts": string[], "pass": bool}. ' +
+        "pass=false if person_count is wrong, a listed character is clearly off-model (wrong hair/glasses/clothing colors), " +
+        "there is rendered text/panels in frame, or a glaring anatomy artifact (extra hands/limbs, floating body parts).",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: mediaType, data: b64 } },
+            {
+              type: "text",
+              text: `Expected exactly ${expected} person(s) in frame:\n${who}\n\nShot: ${shot.framing}. QC this keyframe.`,
+            },
+          ],
+        },
+      ],
+    }),
+  });
+  if (!res.ok) throw new Error(`Anthropic QC ${res.status}: ${await res.text()}`);
+  const data = await res.json();
+  const text = data.content.map((b) => b.text ?? "").join("");
+  return JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
+}
+
 // Showrunner agent: season arc + episode pitch slate (docs/plan/04 stage 0).
 export async function generateSeason({ show, episodeCount = 6 }) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {

@@ -92,12 +92,19 @@ export async function produceEpisode({ show, idea, outRoot, forceMock = false, l
   await Promise.all(
     shots.map(async (shot) => {
       const kf = path.join(dirs.keyframes, `shot${String(shot.idx).padStart(2, "0")}.png`);
-      await p.image.generateKeyframe({
-        shot,
-        show,
-        outFile: kf,
-        referenceImages: characterSheets(bible, shot.character_ids),
-      });
+      // Keyframe + QC gate: retry once on failure before spending video money.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        await p.image.generateKeyframe({
+          shot,
+          show,
+          outFile: kf,
+          referenceImages: characterSheets(bible, shot.character_ids),
+        });
+        const qc = await p.qc.checkKeyframe({ imageFile: kf, shot, show });
+        shot.qc = qc;
+        if (qc.pass) break;
+        log("qc", `shot ${shot.idx} FAILED QC (${qc.person_count} people, ${JSON.stringify(qc.artifacts).slice(0, 80)}) — ${attempt === 0 ? "regenerating" : "keeping best effort, flagged"}`);
+      }
       shot.keyframeFile = kf;
       const clip = path.join(dirs.clips, `shot${String(shot.idx).padStart(2, "0")}.mp4`);
       await p.video.generateClip({ keyframe: kf, shot, show, durationS: shot.duration_s, outFile: clip });

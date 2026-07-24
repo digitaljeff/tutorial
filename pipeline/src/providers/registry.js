@@ -41,6 +41,17 @@ export function getProviders({ forceMock = false } = {}) {
         return (await pickAsync("music", "ELEVENLABS_API_KEY", el, mockMedia, forceMock)).generateMusic(args);
       },
     },
+    qc: {
+      checkKeyframe: async (args) => {
+        if (forceMock || !process.env.ANTHROPIC_API_KEY) return { pass: true, person_count: -1, artifacts: [], mock: true };
+        try {
+          return await (await import("./real/anthropic.js")).checkKeyframe(args);
+        } catch (e) {
+          log("gateway", `WARN qc.checkKeyframe failed (${String(e.message).slice(0, 80)}) -> pass-through`);
+          return { pass: true, person_count: -1, artifacts: [], error: true };
+        }
+      },
+    },
     lipsync: {
       applyLipSync: async (args) =>
         (await pickAsync("lipsync", "FAL_KEY", fal, mockMedia, forceMock)).applyLipSync(args),
