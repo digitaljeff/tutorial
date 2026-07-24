@@ -1,0 +1,21 @@
+{
+  "characters": {
+    "dana": {
+      "sheets": {
+        "front": "/home/user/tutorial/pipeline/out/bible/steamed/sheets/dana_front.png",
+        "side": "/home/user/tutorial/pipeline/out/bible/steamed/sheets/dana_side.png",
+        "expressions": "/home/user/tutorial/pipeline/out/bible/steamed/sheets/dana_expressions.png"
+      },
+      "voice_id": "D1FCa321FjLPMXgI3ybr"
+    },
+    "mo": {
+      "sheets": {
+        "front": "/home/user/tutorial/pipeline/out/bible/steamed/sheets/mo_front.png",
+        "side": "/home/user/tutorial/pipeline/out/bible/steamed/sheets/mo_side.png",
+        "expressions": "/home/user/tutorial/pipeline/out/bible/steamed/sheets/mo_expressions.png"
+      },
+      "voice_id": "jVOYh7FQvv2wCR4K0BMs"
+    }
+  },
+  "jingle": "/home/user/tutorial/pipeline/out/bible/steamed/jingle.wav"
+}

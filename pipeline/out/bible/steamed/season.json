@@ -1,0 +1,48 @@
+{
+  "arc": {
+    "destination": "The chain across the street closes — because Dana and Mo accidentally out-community it.",
+    "acts": [
+      "Dana obsesses over beating the chain through schemes while Mo accidentally creates genuine community moments",
+      "Their organic warmth starts attracting locals while Dana's plans backfire; the chain notices and retaliates",
+      "Dana realizes the shop won won by being real, not strategic; the chain closes as customers choose connection over convenience"
+    ]
+  },
+  "episodes": [
+    {
+      "number": 1,
+      "title": "Soft Open, Hard Feelings",
+      "premise": "Dana declares war when the chain opens across the street with a flash mob. Mo suggests they just make good coffee.",
+      "arc_beat": "Establishes the rivalry and Dana's need to compete; Mo's philosophy plants the seed of what will actually work"
+    },
+    {
+      "number": 2,
+      "title": "The Loyalty Card Incident",
+      "premise": "Dana launches an aggressive loyalty program with increasingly desperate rewards. Mo accidentally creates a regular by remembering someone's name.",
+      "arc_beat": "Dana's scheme fails; Mo's genuine attention earns their first true regular (establishes pattern: real beats tactical)"
+    },
+    {
+      "number": 3,
+      "title": "Influencer Outreach",
+      "premise": "Dana forces Mo to help stage the perfect Instagram shot. The photo flops, but Mo's visible annoyance in the background goes viral as a meme.",
+      "arc_beat": "The shop gains unexpected visibility for being authentic/unpolished; locals start coming in referencing 'that meme place'"
+    },
+    {
+      "number": 4,
+      "title": "The Chain Strikes Back",
+      "premise": "The chain copies their menu and undercuts prices. Dana spirals until Mo points out their customers didn't leave.",
+      "arc_beat": "The threat escalates but the community they've built holds; Dana first glimpses that connection matters more than competition"
+    },
+    {
+      "number": 5,
+      "title": "Community Board",
+      "premise": "Dana reluctantly lets locals use their wall for flyers after Mo already said yes. The wall becomes the neighborhood hub, cramping Dana's aesthetic but filling the shop.",
+      "arc_beat": "The shop transforms into genuine community space; Dana wrestles with losing control while gaining what she actually wanted"
+    },
+    {
+      "number": 6,
+      "title": "Closed for Business",
+      "premise": "The chain shutters overnight; Dana expects triumph but feels empty. Mo reveals the chain's regional manager now comes in for their coffee — they won by being somewhere worth going.",
+      "arc_beat": "Victory arrives quietly; Dana accepts they succeeded by accident through humanity, not strategy; the rivalry ends with unexpected grace"
+    }
+  ]
+}
